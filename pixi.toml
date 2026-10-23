@@ -16,11 +16,11 @@ version = ">=0.2.7,<0.3"
 channels = ["https://prefix.dev/conda-forge"]
 
 [package.host-dependencies]
-mojo = ">=1.0.0,<2"
+mojo = ">=1.1.0,<1.2"
 mojo-raylib-shim = { path = "./shim" }
 
 [package.run-dependencies]
-mojo = ">=1.0.0,<2"
+mojo = ">=1.1.0,<1.2"
 mojo-raylib-shim = { path = "./shim" }
 
 # Codegen / dev workflow tasks live in a separate `codegen` feature so they

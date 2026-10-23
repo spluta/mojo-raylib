@@ -19,7 +19,7 @@
 # Handlers therefore cannot capture — pass state through globals or through the
 # raylib object the callback is attached to.
 
-from std.ffi import c_char, c_int, c_uchar, c_uint, external_call, CStringSlice
+from std.ffi import c_char, c_int, c_uchar, c_uint, external_call, CStringSpan
 import mojo_raylib.types as public_types
 from mojo_raylib.types import AudioStream
 
@@ -60,7 +60,7 @@ comptime SaveFileTextHandler = def(file_name: String, text: String) thin -> Bool
 @always_inline
 def _c_string(ptr: Pointer[c_char, MutUntrackedOrigin]) -> String:
     """Copy a NUL-terminated C string into an owned Mojo `String`."""
-    return String(CStringSlice(unsafe_from_ptr=ptr))
+    return String(CStringSpan(unsafe_from_ptr=ptr))
 
 
 def set_trace_log_callback[handler: TraceLogHandler]():

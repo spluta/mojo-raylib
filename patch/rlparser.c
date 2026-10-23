@@ -1869,7 +1869,6 @@ static void ExportMojoPublicTypes(const char *rootDir)
     fprintf(outFile, "import mojo_raylib.raw.types as raw_types\n");
     fprintf(outFile, "import mojo_raylib.types as public_types\n");
     fprintf(outFile, "from std.ffi import c_char, c_uchar, c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_float, c_double\n");
-    fprintf(outFile, "from std.collections import InlineArray\n");
 
     // Forward-declared opaque types — same stubs as raw/types.mojo for layout parity.
     fprintf(outFile, "@fieldwise_init\nstruct rAudioBuffer(TrivialRegisterPassable):\n    var _opaque: c_int\n\n");
@@ -2258,7 +2257,7 @@ static void ExportMojoSafe(const char *rootDir)
     fprintf(outFile, "import mojo_raylib.types as public_types\n");
     fprintf(outFile, "import mojo_raylib.raw.types as raw_types\n");
     fprintf(outFile, "import mojo_raylib.raw.raylib as raw\n");
-    fprintf(outFile, "from std.ffi import CStringSlice, c_char, c_uchar, c_int, c_uint, c_float\n");
+    fprintf(outFile, "from std.ffi import CStringSpan, c_char, c_uchar, c_int, c_uint, c_float\n");
     fprintf(outFile, "from std.collections import Span\n");
 
     for (int i = 0; i < funcCount; i++)
@@ -3134,7 +3133,7 @@ static void GetMojoType(const char *cType, bool forReturnType, bool forCallbackP
             arraySize = atoi(arraySizeText);
         }
         // Use SIMD for numeric arrays so the enclosing struct can be RegisterPassable
-        // (InlineArray itself isn't conditionally RP in Mojo 0.26).
+        // (Array itself isn't conditionally RP in Mojo 0.26).
         CopyTrimmed(trimmedBase, baseType, sizeof(trimmedBase));
         const char *dtype = NULL;
         if (IsTextEqual(trimmedBase, "char", 5))                dtype = "DType.int8";
@@ -3154,7 +3153,7 @@ static void GetMojoType(const char *cType, bool forReturnType, bool forCallbackP
             return;
         }
         GetMojoType(baseType, false, false, scalarType, sizeof(scalarType));
-        snprintf(outType, outTypeSize, "InlineArray[%s, %i]", scalarType, arraySize);
+        snprintf(outType, outTypeSize, "Array[%s, %i]", scalarType, arraySize);
         return;
     }
 
@@ -3242,7 +3241,7 @@ static void GetMojoType(const char *cType, bool forReturnType, bool forCallbackP
 
     if (!forReturnType && !forCallbackParam && isConst && IsTextEqual(scalarType, "c_char", 7))
     {
-        CopyText(outType, "CStringSlice", outTypeSize);
+        CopyText(outType, "CStringSpan", outTypeSize);
         return;
     }
 
@@ -3372,7 +3371,7 @@ static void GetMojoLayoutType(const char *cType, char *outType, int outTypeSize)
             return;
         }
         GetMojoLayoutType(arrayBaseType, arrayElementType, sizeof(arrayElementType));
-        snprintf(outType, outTypeSize, "InlineArray[%s, %i]", arrayElementType, arraySize);
+        snprintf(outType, outTypeSize, "Array[%s, %i]", arrayElementType, arraySize);
         return;
     }
 
@@ -3477,7 +3476,7 @@ static bool NeedsShimWrapper(const FunctionInfo *func)
 }
 
 // `Matrix[2]` → elementName="Matrix", arraySize=2; returns true.
-// Used to expand InlineArray[Struct, N] fields into N individual fields so the
+// Used to expand Array[Struct, N] fields into N individual fields so the
 // containing struct can stay TrivialRegisterPassable.
 static bool IsArrayOfKnownStruct(const char *fieldType, char *elementName, int elementNameSize, int *arraySize)
 {
@@ -3586,7 +3585,7 @@ static bool GetSpanCompanionIndex(const FunctionInfo *func, int paramIndex, int 
         return false;
     if (IsTextEqual(baseType, "void", 5))
         return false;
-    // char pointers are strings, not arrays — handled via CStringSlice/String,
+    // char pointers are strings, not arrays — handled via CStringSpan/String,
     // never paired with a count parameter.
     if (IsTextEqual(baseType, "char", 5))
         return false;
@@ -3714,9 +3713,8 @@ static void WriteGeneratedHeader(FILE *outFile, const char *title, const char *s
 
 static void WriteMojoCommonImports(FILE *outFile)
 {
-    fprintf(outFile, "from std.ffi import CStringSlice, c_char, c_uchar, c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_float, c_double, external_call\n");
-    fprintf(outFile, "from std.memory import stack_allocation\n");
-    fprintf(outFile, "from std.collections import InlineArray\n\n");
+    fprintf(outFile, "from std.ffi import CStringSpan, c_char, c_uchar, c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_float, c_double, external_call\n");
+    fprintf(outFile, "from std.memory import stack_allocation\n\n");
 }
 
 static void WriteMojoDocstring(FILE *outFile, const char *comment, int indentLevel)
@@ -3830,7 +3828,7 @@ static void WritePublicToRawArgEx(FILE *outFile, const char *cType, const char *
         CopyTrimmed(trimmedBase, strippedBase, sizeof(trimmedBase));
 
         if (isConst && IsTextEqual(baseType, "char *", 7))
-            fprintf(outFile, "CStringSlice(unsafe_from_ptr=%s.unsafe_ptr().unsafe_bitcast[c_char]())", expr);
+            fprintf(outFile, "CStringSpan(unsafe_from_ptr=%s.unsafe_ptr().unsafe_bitcast[c_char]())", expr);
         else if (IsKnownStructOrAlias(trimmedBase))
         {
             char target[128] = {0};
@@ -3923,7 +3921,7 @@ static void WriteRawToPublicExprEx(FILE *outFile, const char *cType, const char 
         CopyTrimmed(trimmedBase, strippedBase, sizeof(trimmedBase));
 
         if (isConst && IsTextEqual(baseType, "char *", 7))
-            fprintf(outFile, "String(CStringSlice(unsafe_from_ptr=%s))", expr);
+            fprintf(outFile, "String(CStringSpan(unsafe_from_ptr=%s))", expr);
         else if (IsKnownStructOrAlias(trimmedBase))
         {
             char target[128] = {0};

@@ -2,9 +2,8 @@
 # Low-level raylib/raymath type declarations
 # Source: src/raylib.h
 
-from std.ffi import CStringSlice, c_char, c_uchar, c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_float, c_double, external_call
+from std.ffi import CStringSpan, c_char, c_uchar, c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_float, c_double, external_call
 from std.memory import stack_allocation
-from std.collections import InlineArray
 
 
 # Opaque forward-declared types (raylib internals)

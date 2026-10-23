@@ -5,7 +5,6 @@
 import mojo_raylib.raw.types as raw_types
 import mojo_raylib.types as public_types
 from std.ffi import c_char, c_uchar, c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_float, c_double
-from std.collections import InlineArray
 @fieldwise_init
 struct rAudioBuffer(TrivialRegisterPassable):
     var _opaque: c_int
